@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Patroli Cek Poin - Tol Makassar</title>
+    <title>CekPoint - Patroli Tol Makassar</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,7 +13,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Soft blue-gray background */
+            background-color: #f0f4f8; 
             -webkit-tap-highlight-color: transparent;
         }
         
@@ -23,26 +23,43 @@
             animation: fadeIn 0.3s ease-in-out forwards;
         }
         .view-section.active {
-            display: block;
+            display: flex; /* Berubah menjadi flex agar layouting lebih mudah */
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Scanner Customization */
+        /* Fullscreen Scanner Customization */
+        #view-scanner {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: black;
+            z-index: 100;
+        }
         #reader {
             width: 100%;
-            border-radius: 1rem;
-            overflow: hidden;
+            height: 100vh;
             border: none !important;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #reader video {
-            object-fit: cover;
-            border-radius: 1rem;
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
         }
-        #reader__dashboard_section_csr span { display: none !important; }
+        /* Sembunyikan elemen UI bawaan dari library html5-qrcode agar lebih bersih */
+        #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
+        #reader__dashboard_section_csr button {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            margin-top: 20px !important;
+        }
 
         /* Toast Animation */
         .toast-enter { transform: translateY(100%); opacity: 0; }
@@ -56,7 +73,8 @@
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
-    <header class="bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg sticky top-0 z-40">
+    <!-- Header ID ditambahkan agar bisa disembunyikan saat masuk mode kamera -->
+    <header id="mainAppHeader" class="bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg sticky top-0 z-40">
         <div class="container mx-auto px-5 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="bg-white p-2 rounded-xl text-blue-700 shadow-sm">
@@ -78,7 +96,7 @@
 
     <main class="container mx-auto px-4 py-6 flex-1 max-w-md w-full flex flex-col relative">
         
-        <section id="view-login" class="view-section active flex-1 flex flex-col justify-center pb-10">
+        <section id="view-login" class="view-section active flex-1 flex-col justify-center pb-10">
             <div class="text-center mb-8">
                 <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                     <i class="fa-solid fa-user-shield text-4xl text-blue-600"></i>
@@ -118,7 +136,7 @@
             </div>
         </section>
 
-        <section id="view-dashboard" class="view-section flex-1 flex flex-col">
+        <section id="view-dashboard" class="view-section flex-1 flex-col">
             <!-- User Greeting Card -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-0 opacity-50"></div>
@@ -140,12 +158,12 @@
             </div>
 
             <!-- Big Scan Button CTA -->
-            <div class="flex justify-center mb-8">
+            <div class="flex justify-center mb-8 mt-4">
                 <button id="openScannerBtn" class="relative group">
                     <div class="absolute inset-0 bg-blue-400 rounded-full blur-md opacity-40 group-hover:opacity-60 transition duration-300"></div>
-                    <div class="relative bg-gradient-to-br from-blue-500 to-blue-700 w-36 h-36 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-95 transition-all">
-                        <i class="fa-solid fa-qrcode text-4xl mb-2"></i>
-                        <span class="font-bold text-sm tracking-wide">SCAN BARCODE</span>
+                    <div class="relative bg-gradient-to-br from-blue-500 to-blue-700 w-40 h-40 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-95 transition-all">
+                        <i class="fa-solid fa-qrcode text-5xl mb-2"></i>
+                        <span class="font-bold text-sm tracking-wide mt-1">SCAN LOKASI</span>
                     </div>
                 </button>
             </div>
@@ -167,28 +185,8 @@
                 </div>
             </div>
         </section>
-
-        <section id="view-scanner" class="view-section flex-1 flex flex-col">
-            <button id="backToDashFromScan" class="self-start text-blue-600 font-medium mb-4 flex items-center gap-2 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition -ml-3">
-                <i class="fa-solid fa-arrow-left"></i> Kembali
-            </button>
-            
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-                <div class="text-center mb-4">
-                    <h2 class="text-lg font-bold text-gray-800">Arahkan Kamera</h2>
-                    <p class="text-xs text-gray-500">Posisikan Barcode/QR Code di dalam kotak area</p>
-                </div>
-                
-                <div id="reader" class="bg-gray-100 min-h-[300px] flex items-center justify-center relative mb-4">
-                    <div id="reader-placeholder" class="text-gray-400 flex flex-col items-center">
-                        <i class="fa-solid fa-camera-rotate text-4xl mb-3 animate-pulse"></i>
-                        <p class="text-sm">Menyiapkan Kamera...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="view-photo" class="view-section flex-1 flex flex-col">
+        
+        <section id="view-photo" class="view-section flex-1 flex-col">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
                     <div class="bg-green-100 p-2 rounded-full text-green-600">
@@ -208,7 +206,7 @@
                             <div class="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition">
                                 <i class="fa-solid fa-camera text-2xl text-blue-500"></i>
                             </div>
-                            <span class="text-xs text-gray-600 font-medium bg-white/90 px-3 py-1 rounded-full shadow-sm">Ketuk Buka Kamera</span>
+                            <span class="text-xs text-gray-600 font-medium bg-white/90 px-3 py-1 rounded-full shadow-sm">Ketuk Buka Kamera HP</span>
                         </label>
                         <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden">
                     </div>
@@ -225,6 +223,7 @@
             </div>
         </section>
 
+        <!-- Loading Overlay -->
         <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
             <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-[80vw]">
                 <div class="relative w-16 h-16 mb-4">
@@ -235,32 +234,53 @@
                 <p class="text-xs text-gray-500 text-center">Mengupload foto dan koordinat ke server...</p>
             </div>
         </div>
-
     </main>
+
+    <section id="view-scanner" class="view-section flex-col">
+        <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <button id="backToDashFromScan" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 transition text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Batal
+            </button>
+            <div class="text-white font-semibold tracking-wide text-sm flex items-center gap-2">
+                <i class="fa-solid fa-qrcode"></i> ARAHKAN KAMERA
+            </div>
+            <div class="w-20"></div> <!-- Spacer -->
+        </div>
+        
+        <div id="reader" class="bg-black relative">
+            <div id="reader-placeholder" class="text-gray-400 flex flex-col items-center absolute z-0">
+                <i class="fa-solid fa-camera-rotate text-4xl mb-3 animate-pulse"></i>
+                <p class="text-sm">Menyiapkan Kamera...</p>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-10 left-0 right-0 text-center z-10 pointer-events-none">
+            <p class="text-white/70 text-xs bg-black/50 inline-block px-4 py-2 rounded-full backdrop-blur-sm">Posisikan barcode di tengah layar</p>
+        </div>
+    </section>
 
     <script>
         /**
          * ==========================================
          * KONFIGURASI URL GOOGLE APPS SCRIPT
          * ==========================================
-         * WAJIB DIGANTI dengan URL Web App dari Google Apps Script Anda.
+         * Pastikan URL ini sudah menggunakan URL yang terbaru
          */
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzlL8qCA7HCHGMfjZyYNhtyHfc024IjVfstYI2azzghLu4g2OYFCD7V04c-DNla0KNv/exec"; 
 
-        // DOM Elements - Views
+        // DOM Elements
+        const mainAppHeader = document.getElementById('mainAppHeader');
         const viewLogin = document.getElementById('view-login');
         const viewDashboard = document.getElementById('view-dashboard');
         const viewScanner = document.getElementById('view-scanner');
         const viewPhoto = document.getElementById('view-photo');
         const logoutBtn = document.getElementById('logoutBtn');
 
-        // DOM Elements - Inputs & Buttons
         const officerNameInput = document.getElementById('officerName');
         const officerShiftInput = document.getElementById('officerShift');
         const saveIdentityBtn = document.getElementById('saveIdentityBtn');
         const clockDisplay = document.getElementById('clockDisplay');
         
-        // DOM Elements - Dashboard
         const dashOfficerName = document.getElementById('dashOfficerName');
         const dashShift = document.getElementById('dashShift');
         const dashScanCount = document.getElementById('dashScanCount');
@@ -269,11 +289,9 @@
         const dashboardEmptyHistory = document.getElementById('dashboardEmptyHistory');
         const clearHistoryBtn = document.getElementById('clearHistoryBtn');
         
-        // DOM Elements - Scanner
         const backToDashFromScan = document.getElementById('backToDashFromScan');
         const readerPlaceholder = document.getElementById('reader-placeholder');
         
-        // DOM Elements - Photo Form
         const scannedLocationDisplay = document.getElementById('scannedLocationDisplay');
         const cameraInput = document.getElementById('cameraInput');
         const photoPreview = document.getElementById('photoPreview');
@@ -290,15 +308,11 @@
         let pendingCheckpointId = null;
         let compressedImageBase64 = null;
 
-        // --- Core App Functions ---
-
-        // Real-time Clock
         setInterval(() => {
             const now = new Date();
             if(clockDisplay) clockDisplay.innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second:'2-digit' });
         }, 1000);
 
-        // Sound Feedback
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep() {
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -314,20 +328,25 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
-        // View Router
+        // Fungsi Router Layar
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
             
+            // Logika Header & Tombol Logout
             if(viewId === 'view-dashboard') {
                 logoutBtn.classList.remove('hidden');
+                mainAppHeader.classList.remove('hidden');
                 updateDashboardUI();
+            } else if (viewId === 'view-scanner') {
+                // Sembunyikan header saat masuk mode kamera (Fullscreen feel)
+                mainAppHeader.classList.add('hidden');
             } else {
                 logoutBtn.classList.add('hidden');
+                mainAppHeader.classList.remove('hidden');
             }
         }
 
-        // Initialize App
         function initApp() {
             if (currentOfficerName && currentShift) {
                 switchView('view-dashboard');
@@ -335,8 +354,6 @@
                 switchView('view-login');
             }
         }
-
-        // --- Login & Dashboard Logic ---
 
         saveIdentityBtn.addEventListener('click', () => {
             const name = officerNameInput.value.trim();
@@ -368,11 +385,8 @@
 
         function updateDashboardUI() {
             dashOfficerName.textContent = currentOfficerName;
-            // Get shift type (Pagi/Siang/Malam)
             const shiftType = currentShift.split(' ')[0]; 
             dashShift.textContent = shiftType;
-            
-            // Render History
             renderHistory();
         }
 
@@ -420,15 +434,12 @@
         function addLogToHistory(lokasi, status) {
             const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             scanHistory.unshift({ time, lokasi, status });
-            // Keep only last 20 in local storage to prevent bloating
             if(scanHistory.length > 20) scanHistory.pop();
             localStorage.setItem('ptl_history', JSON.stringify(scanHistory));
         }
 
-
-        // --- Scanner Logic ---
-
         openScannerBtn.addEventListener('click', startScanning);
+        
         backToDashFromScan.addEventListener('click', async () => {
             await stopScanning();
             switchView('view-dashboard');
@@ -442,8 +453,15 @@
                 if(!html5QrCode) {
                     html5QrCode = new Html5Qrcode("reader");
                 }
-                const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
                 
+                // Konfigurasi agar memenuhi layar dan fokus barcode
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 }, 
+                    aspectRatio: window.innerHeight / window.innerWidth
+                };
+                
+                // Memaksa menggunakan kamera belakang (environment)
                 await html5QrCode.start(
                     { facingMode: "environment" },
                     config,
@@ -453,7 +471,7 @@
                 readerPlaceholder.style.display = 'none';
             } catch (err) {
                 console.error(err);
-                showToast("Gagal mengakses kamera. Mohon izinkan akses kamera.", "error");
+                showToast("Gagal mengakses kamera. Mohon izinkan akses kamera di browser Anda.", "error");
                 switchView('view-dashboard');
             }
         }
@@ -473,13 +491,11 @@
             showPhotoForm(decodedText);
         }
 
-        // --- Photo & Form Logic ---
-
         function showPhotoForm(locationId) {
             switchView('view-photo');
             scannedLocationDisplay.textContent = locationId;
             
-            // Reset state
+            // Bersihkan form
             cameraInput.value = '';
             photoPreview.src = '';
             photoPreview.classList.add('hidden');
@@ -499,7 +515,6 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // Preview UI
             const reader = new FileReader();
             reader.onload = function(event) {
                 photoPreview.src = event.target.result;
@@ -508,7 +523,6 @@
             }
             reader.readAsDataURL(file);
 
-            // Compress immediately
             compressImage(file, 800, 800, 0.7).then(base64 => {
                 compressedImageBase64 = base64;
                 submitReportBtn.disabled = false;
@@ -542,8 +556,6 @@
             });
         }
 
-        // --- Submit Logic (API Call & GPS) ---
-
         submitReportBtn.addEventListener('click', async () => {
             if (!pendingCheckpointId || !compressedImageBase64) return;
             
@@ -555,12 +567,11 @@
             loadingOverlay.classList.remove('hidden');
             
             try {
-                // 1. Get GPS Location
+                // Ambil GPS
                 const position = await getCurrentLocation();
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
 
-                // 2. Prepare Payload
                 const payload = {
                     petugas: currentOfficerName,
                     shift: currentShift,
@@ -570,7 +581,7 @@
                     fotoBase64: compressedImageBase64
                 };
 
-                // 3. Send to Server via POST
+                // Kirim ke Google Apps Script
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -580,18 +591,21 @@
                 const result = await response.json();
                 if (result.status !== "success") throw new Error(result.message || "Error Server");
 
-                // 4. Success UI
                 addLogToHistory(pendingCheckpointId, "Berhasil");
                 showToast(`Check point ${pendingCheckpointId} terkirim!`, "success");
-                switchView('view-dashboard');
+                
+                // REFRESH HALAMAN SETELAH SUKSES 
+                // Delay 1.5 detik agar petugas sempat melihat pesan sukses sebelum layar mereset.
+                setTimeout(() => {
+                    window.location.reload(); 
+                }, 1500);
 
             } catch (error) {
                 console.error(error);
                 addLogToHistory(pendingCheckpointId, "Gagal");
                 showToast(error.message || "Gagal mencatat laporan. Periksa GPS/Koneksi.", "error");
-                switchView('view-dashboard'); // Back to dash anyway to let them retry
-            } finally {
                 loadingOverlay.classList.add('hidden');
+                switchView('view-dashboard'); 
             }
         });
 
@@ -599,15 +613,14 @@
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) reject(new Error("Browser tidak mendukung GPS"));
                 navigator.geolocation.getCurrentPosition(resolve, () => {
-                    reject(new Error("Akses lokasi ditolak. Aktifkan GPS/Lokasi perangkat."));
+                    reject(new Error("Akses lokasi ditolak. Aktifkan GPS perangkat Anda."));
                 }, { enableHighAccuracy: true, timeout: 15000 });
             });
         }
 
-        // Toast Component
         function showToast(message, type = "success") {
             const toast = document.createElement('div');
-            toast.className = `fixed bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-max px-5 py-4 rounded-xl shadow-2xl text-white font-medium text-sm flex items-center gap-3 z-[100] toast-enter`;
+            toast.className = `fixed top-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-max px-5 py-4 rounded-xl shadow-2xl text-white font-medium text-sm flex items-center gap-3 z-[200] toast-enter`;
             
             if (type === "success") {
                 toast.classList.add('bg-gray-900');
