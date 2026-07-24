@@ -30,7 +30,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Fullscreen Scanner Customization */
         #view-scanner {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -38,18 +37,19 @@
             z-index: 100;
         }
         #reader {
-            width: 100%;
+            width: 100vw;
             height: 100vh;
             border: none !important;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
         #reader video {
-            /* PERBAIKAN 1: Hapus object-fit cover yang merusak koordinat bacaan scanner */
+            /* Mencegah video memanjang/distorsi */
             width: 100% !important;
-            height: auto !important;
-            max-height: 100vh !important;
+            height: 100% !important;
+            object-fit: cover !important; 
         }
         #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
         #reader__dashboard_section_csr button {
@@ -155,7 +155,6 @@
                 </div>
             </div>
 
-            <!-- Big Scan Button CTA -->
             <div class="flex justify-center mb-8 mt-4">
                 <button id="openScannerBtn" class="relative group cursor-pointer border-none bg-transparent outline-none">
                     <div class="absolute inset-0 bg-blue-400 rounded-full blur-md opacity-40 group-hover:opacity-60 transition duration-300"></div>
@@ -166,7 +165,6 @@
                 </button>
             </div>
 
-            <!-- Recent Activity -->
             <div class="flex-1 bg-white rounded-t-3xl shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] border-t border-x border-gray-100 -mx-4 px-5 pt-6 pb-4 mt-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-gray-800">Riwayat Terkini</h3>
@@ -194,7 +192,6 @@
                     </div>
                 </div>
 
-                <!-- Foto Utama -->
                 <div class="mb-4">
                     <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Ambil Foto Bukti Sekitar</label>
                     <div class="relative w-full aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group">
@@ -209,16 +206,14 @@
                     </div>
                 </div>
 
-                <!-- Foto Tambahan / Opsional -->
                 <div class="mb-4 pt-4 border-t border-gray-100">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto Kejadian / Aset (Opsional)</label>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto Kejadian (Opsional)</label>
                         <span id="optionalPhotoCount" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">0/3</span>
                     </div>
                     <p class="text-[10px] text-gray-500 mb-3 leading-tight">Tambahkan detail foto jika terdapat temuan pencurian atau perusakan aset tol.</p>
                     
                     <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-2 min-h-[5rem]" id="optionalPhotosContainer">
-                        <!-- Tombol Tambah Foto Opsional -->
                         <label for="optionalCameraInput" class="shrink-0 w-20 h-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200/50 transition" id="addOptionalPhotoBtn">
                             <i class="fa-solid fa-plus text-gray-400 mb-1"></i>
                             <span class="text-[9px] text-gray-500 font-medium">Tambah</span>
@@ -244,32 +239,14 @@
                     <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
                     <div class="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
-                <h3 class="text-lg font-bold text-gray-800 mb-1">Menyimpan Data</h3>
-                <p class="text-xs text-gray-500 text-center">Mengupload foto dan koordinat ke server...</p>
-            </div>
-        </div>
-    </main>
-
-    <section id="view-scanner" class="view-section flex-col">
-        <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 to-transparent">
-            <button id="backToDashFromScan" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 transition text-sm">
-                <i class="fa-solid fa-arrow-left"></i> Batal
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-            <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-[80vw]">
-                <div class="relative w-16 h-16 mb-4">
-                    <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-                    <div class="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                </div>
-                <!-- PERUBAHAN 2: Menambah ID pada teks loading -->
                 <h3 id="loadingTitle" class="text-lg font-bold text-gray-800 mb-1">Menyimpan Data</h3>
                 <p id="loadingText" class="text-xs text-gray-500 text-center">Mengupload foto dan koordinat ke server...</p>
             </div>
         </div>
     </main>
 
-    <!-- KEMBALIKAN LAYAR SCANNER LIVE -->
-    <section id="view-scanner" class="view-section flex-col hidden z-50">
+    <!-- PERHATIAN: Ini diletakkan di luar <main> agar full-screennya sempurna tanpa terganggu layout lain -->
+    <section id="view-scanner" class="view-section flex-col hidden z-[100]">
         <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-20 bg-gradient-to-b from-black/80 to-transparent">
             <button id="backToDashFromScan" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 transition text-sm">
                 <i class="fa-solid fa-arrow-left"></i> Batal
@@ -277,7 +254,7 @@
             <div class="text-white font-semibold tracking-wide text-sm flex items-center gap-2">
                 <i class="fa-solid fa-qrcode"></i> ARAHKAN KAMERA
             </div>
-            <div class="w-20"></div> <!-- Spacer -->
+            <div class="w-20"></div> <!-- Penyeimbang Spacer -->
         </div>
         
         <div id="reader" class="bg-black relative w-full h-[100vh] flex items-center justify-center">
@@ -293,20 +270,15 @@
     </section>
 
     <script>
-        /**
-         * ==========================================
-         * KONFIGURASI URL GOOGLE APPS SCRIPT
-         * ==========================================
-         */
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzlL8qCA7HCHGMfjZyYNhtyHfc024IjVfstYI2azzghLu4g2OYFCD7V04c-DNla0KNv/exec"; 
 
-        // DOM Elements - Core
         const mainAppHeader = document.getElementById('mainAppHeader');
         const logoutBtn = document.getElementById('logoutBtn');
         const clockDisplay = document.getElementById('clockDisplay');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingTitle = document.getElementById('loadingTitle');
+        const loadingText = document.getElementById('loadingText');
 
-        // DOM Elements - Inputs & Views
         const officerNameInput = document.getElementById('officerName');
         const officerShiftInput = document.getElementById('officerShift');
         const dashOfficerName = document.getElementById('dashOfficerName');
@@ -314,15 +286,10 @@
         const dashScanCount = document.getElementById('dashScanCount');
         const dashboardHistoryList = document.getElementById('dashboardHistoryList');
         const dashboardEmptyHistory = document.getElementById('dashboardEmptyHistory');
-        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
         
-        // KEMBALIKAN VARIABEL SCANNER LIVE
         const openScannerBtn = document.getElementById('openScannerBtn');
         const backToDashFromScan = document.getElementById('backToDashFromScan');
         const readerPlaceholder = document.getElementById('reader-placeholder');
-        
-        const loadingTitle = document.getElementById('loadingTitle');
-        const loadingText = document.getElementById('loadingText');
         
         const scannedLocationDisplay = document.getElementById('scannedLocationDisplay');
         const cameraInput = document.getElementById('cameraInput');
@@ -334,14 +301,13 @@
         const optionalPhotoCount = document.getElementById('optionalPhotoCount');
         const submitReportBtn = document.getElementById('submitReportBtn');
 
-        // State Variables
         let html5QrCode;
         let currentOfficerName = localStorage.getItem('ptl_name') || '';
         let currentShift = localStorage.getItem('ptl_shift') || '';
         let scanHistory = JSON.parse(localStorage.getItem('ptl_history')) || [];
         let pendingCheckpointId = null;
         let compressedImageBase64 = null;
-        let optionalPhotosBase64 = []; // Menyimpan array foto tambahan
+        let optionalPhotosBase64 = [];
 
         setInterval(() => {
             const now = new Date();
@@ -372,7 +338,7 @@
                 mainAppHeader.classList.remove('hidden');
                 updateDashboardUI();
             } else if (viewId === 'view-scanner') {
-                mainAppHeader.classList.add('hidden');
+                mainAppHeader.classList.add('hidden'); // Sembunyikan header agar full screen murni
             } else {
                 logoutBtn.classList.add('hidden');
                 mainAppHeader.classList.remove('hidden');
@@ -380,11 +346,8 @@
         }
 
         function initApp() {
-            if (currentOfficerName && currentShift) {
-                switchView('view-dashboard');
-            } else {
-                switchView('view-login');
-            }
+            if (currentOfficerName && currentShift) { switchView('view-dashboard'); } 
+            else { switchView('view-login'); }
         }
 
         document.getElementById('saveIdentityBtn').addEventListener('click', () => {
@@ -393,10 +356,8 @@
             if (name.length < 3) return showToast("Masukkan nama lengkap yang valid", "error");
             if (!shift) return showToast("Silakan pilih shift kerja", "error");
             
-            currentOfficerName = name;
-            currentShift = shift;
-            localStorage.setItem('ptl_name', name);
-            localStorage.setItem('ptl_shift', shift);
+            currentOfficerName = name; currentShift = shift;
+            localStorage.setItem('ptl_name', name); localStorage.setItem('ptl_shift', shift);
             switchView('view-dashboard');
             showToast("Selamat bertugas, " + name, "success");
         });
@@ -450,9 +411,7 @@
 
         document.getElementById('clearHistoryBtn').addEventListener('click', () => {
             if(confirm("Hapus tampilan riwayat sesi ini? (Data di server tetap aman)")) {
-                scanHistory = [];
-                localStorage.setItem('ptl_history', JSON.stringify([]));
-                renderHistory();
+                scanHistory = []; localStorage.setItem('ptl_history', JSON.stringify([])); renderHistory();
             }
         });
 
@@ -463,7 +422,6 @@
             localStorage.setItem('ptl_history', JSON.stringify(scanHistory));
         }
 
-        // --- KEMBALIKAN LOGIKA SCANNER LIVE (OTOMATIS) DENGAN FALLBACK SUPER KUAT ---
         openScannerBtn.addEventListener('click', startScanning);
         
         backToDashFromScan.addEventListener('click', async () => {
@@ -480,12 +438,12 @@
                     html5QrCode = new Html5Qrcode("reader");
                 }
                 
+                // Konfigurasi agar kotak scan berbentuk bujur sangkar sempurna (250x250)
                 const config = { 
                     fps: 10, 
                     qrbox: { width: 250, height: 250 }
                 };
                 
-                // Percobaan 1: Gunakan kamera belakang secara default
                 await html5QrCode.start(
                     { facingMode: "environment" },
                     config,
@@ -495,15 +453,12 @@
                 if(readerPlaceholder) readerPlaceholder.style.display = 'none';
                 
             } catch (err) {
-                console.warn("Gagal pakai facingMode, mencoba deteksi kamera manual...", err);
-                
-                // Percobaan 2 (Fallback): Deteksi ID kamera jika mode default ditolak perangkat
+                console.warn("Mencoba deteksi kamera manual karena fallback...", err);
                 try {
                     const cameras = await Html5Qrcode.getCameras();
                     if (cameras && cameras.length > 0) {
-                        // Cari kamera belakang
                         let backCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('belakang'));
-                        if (!backCamera) backCamera = cameras[cameras.length - 1]; // Biasanya kamera terakhir adalah belakang
+                        if (!backCamera) backCamera = cameras[cameras.length - 1]; 
                         
                         await html5QrCode.start(
                             backCamera.id,
@@ -512,13 +467,9 @@
                             onScanFailure
                         );
                         if(readerPlaceholder) readerPlaceholder.style.display = 'none';
-                    } else {
-                        throw new Error("Tidak ada kamera fisik terdeteksi.");
-                    }
+                    } else { throw new Error("Tidak ada kamera."); }
                 } catch (fallbackErr) {
-                    console.error(fallbackErr);
-                    // Peringatan agar pengguna tahu penyebab gagalnya
-                    alert("Akses Kamera Ditolak Browser!\n\nCara memperbaiki:\n1. Buka web ini melalui Browser Asli (Chrome), BUKAN dari dalam link WhatsApp.\n2. Ketuk ikon gembok 🔒 di sebelah nama web (atas), pilih 'Izin', lalu AKTIFKAN kamera.");
+                    alert("Akses Kamera Ditolak! Aktifkan izin kamera pada browser Anda (Ketuk gembok di sebelah URL).");
                     showToast("Gagal membuka kamera.", "error");
                     switchView('view-dashboard');
                 }
@@ -527,15 +478,11 @@
 
         async function stopScanning() {
             if (html5QrCode && html5QrCode.isScanning) {
-                try {
-                    await html5QrCode.stop();
-                } catch (e) {
-                    console.error("Gagal menghentikan kamera", e);
-                }
+                try { await html5QrCode.stop(); } catch (e) {}
             }
         }
 
-        function onScanFailure(error) { /* Abaikan pembacaan frame yang gagal */ }
+        function onScanFailure(error) {}
 
         async function onScanSuccess(decodedText) {
             playBeep();
@@ -547,18 +494,9 @@
         function showPhotoForm(locationId) {
             switchView('view-photo');
             scannedLocationDisplay.textContent = locationId;
-            
-            // Reset Foto Utama
-            cameraInput.value = '';
-            photoPreview.src = '';
-            photoPreview.classList.add('hidden');
-            cameraLabel.classList.remove('hidden');
-            compressedImageBase64 = null;
-            
-            // Reset Foto Tambahan
-            optionalPhotosBase64 = [];
-            optionalCameraInput.value = '';
-            renderOptionalPhotos();
+            cameraInput.value = ''; photoPreview.src = ''; photoPreview.classList.add('hidden');
+            cameraLabel.classList.remove('hidden'); compressedImageBase64 = null;
+            optionalPhotosBase64 = []; optionalCameraInput.value = ''; renderOptionalPhotos();
             
             submitReportBtn.disabled = true;
             submitReportBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -568,7 +506,6 @@
             pendingCheckpointId = null; switchView('view-dashboard');
         });
 
-        // Proses Gambar Utama
         cameraInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -586,16 +523,11 @@
             }).catch(() => showToast("Gagal memproses gambar utama", "error"));
         });
 
-        // Proses Gambar Opsional
         function renderOptionalPhotos() {
             document.querySelectorAll('.opt-photo-thumb').forEach(el => el.remove());
             optionalPhotoCount.textContent = `${optionalPhotosBase64.length}/3`;
-            
-            if (optionalPhotosBase64.length >= 3) {
-                addOptionalPhotoBtn.classList.add('hidden');
-            } else {
-                addOptionalPhotoBtn.classList.remove('hidden');
-            }
+            if (optionalPhotosBase64.length >= 3) { addOptionalPhotoBtn.classList.add('hidden'); } 
+            else { addOptionalPhotoBtn.classList.remove('hidden'); }
 
             optionalPhotosBase64.forEach((base64, index) => {
                 const wrapper = document.createElement('div');
@@ -604,8 +536,7 @@
                     <img src="${base64}" class="w-full h-full object-cover">
                     <button type="button" onclick="removeOptionalPhoto(${index})" class="absolute top-1 right-1 bg-red-500/90 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 transition shadow-sm z-10">
                         <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
+                    </button>`;
                 optionalPhotosContainer.insertBefore(wrapper, addOptionalPhotoBtn);
             });
         }
@@ -621,11 +552,10 @@
             compressImage(file, 800, 800, 0.7).then(base64 => {
                 optionalPhotosBase64.push(base64);
                 renderOptionalPhotos();
-                e.target.value = ''; // Reset file input
+                e.target.value = '';
             }).catch(() => showToast("Gagal memproses gambar kejadian", "error"));
         });
 
-        // Fungsi Kompresi Canvas
         function compressImage(file, maxWidth, maxHeight, quality) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -654,6 +584,9 @@
 
         submitReportBtn.addEventListener('click', async () => {
             if (!pendingCheckpointId || !compressedImageBase64) return;
+            
+            loadingTitle.textContent = "Menyimpan Data";
+            loadingText.textContent = "Mengupload foto dan koordinat ke server...";
             loadingOverlay.classList.remove('hidden');
             
             try {
@@ -665,7 +598,7 @@
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
                     fotoBase64: compressedImageBase64,
-                    fotoTambahan: optionalPhotosBase64 // Array of up to 3 base64 strings
+                    fotoTambahan: optionalPhotosBase64
                 };
 
                 const response = await fetch(GAS_WEB_APP_URL, {
@@ -682,16 +615,22 @@
                 
                 setTimeout(() => window.location.reload(), 1500);
             } catch (error) {
-                // PERBAIKAN: Penanganan pesan error server yang lebih jelas
                 let errorMsg = error.message;
                 if (errorMsg === "Failed to fetch") {
-                    errorMsg = "Gagal terhubung ke Google. Pastikan Script Backend sudah di-Deploy 'Versi Baru' dan diizinkan.";
+                    errorMsg = "Gagal terhubung! Pastikan GAS Script sudah di-Deploy versi 'New Version' dan diizinkan.";
+                    loadingTitle.textContent = "Akses Ditolak Server";
+                    loadingText.textContent = "Script belum di-deploy ulang. Hubungi admin IT.";
+                    loadingTitle.classList.add("text-red-600");
                 }
                 
                 addLogToHistory(pendingCheckpointId, "Gagal");
                 showToast(errorMsg, "error");
-                loadingOverlay.classList.add('hidden');
-                switchView('view-dashboard'); 
+                
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    loadingTitle.classList.remove("text-red-600");
+                    switchView('view-dashboard'); 
+                }, 3000);
             }
         });
 
@@ -717,7 +656,7 @@
             }, 3500);
         }
 
-        // Boot
+        // Jalankan Inisialisasi
         initApp();
     </script>
 </body>
