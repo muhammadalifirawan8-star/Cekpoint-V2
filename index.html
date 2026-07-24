@@ -46,9 +46,10 @@
             justify-content: center;
         }
         #reader video {
-            object-fit: cover !important;
+            /* PERBAIKAN 1: Hapus object-fit cover yang merusak koordinat bacaan scanner */
             width: 100% !important;
-            height: 100% !important;
+            height: auto !important;
+            max-height: 100vh !important;
         }
         #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
         #reader__dashboard_section_csr button {
@@ -443,46 +444,42 @@
             document.getElementById('reader-placeholder').style.display = 'flex';
             
             try {
-                if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                // Pastikan instance lama dihentikan sebelum membuat yang baru agar tidak crash
+                if (html5QrCode && html5QrCode.isScanning) {
+                    try { await html5QrCode.stop(); } catch(e) {}
+                }
                 
-                // PERBAIKAN 1: Buat kotak scan responsif & hapus aspectRatio agar gambar TIDAK MELAR (distorsi)
+                html5QrCode = new Html5Qrcode("reader");
+                
+                // Konfigurasi ukuran kotak yang dinamis
                 const boxSize = Math.min(window.innerWidth * 0.7, 250); 
                 const config = { 
-                    fps: 15, // Naikkan FPS agar lebih cepat merespon
-                    qrbox: { width: boxSize, height: boxSize },
-                    disableFlip: false
+                    fps: 10, 
+                    qrbox: { width: boxSize, height: boxSize }
                 };
 
-                // PERBAIKAN 2: Deteksi eksplisit daftar kamera HP
-                let cameraConfig = { facingMode: "environment" }; // Default ke kamera belakang
-                
-                try {
-                    const devices = await Html5Qrcode.getCameras();
-                    if (devices && devices.length > 0) {
-                        // Coba cari kamera yang ada kata 'back' atau 'belakang'
-                        const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('belakang'));
-                        if (backCamera) {
-                            cameraConfig = backCamera.id; // Gunakan ID kamera fisik langsung
-                        }
+                // PERBAIKAN 2: Gunakan mode "environment" murni. 
+                // Mencari spesifik kata "back/belakang" seringkali salah memilih lensa Macro di HP Android.
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    onScanSuccess, 
+                    (error) => {
+                        // Abaikan pesan error per-frame saat mencari barcode
                     }
-                } catch (camErr) {
-                    console.warn("Gagal mendapatkan list kamera, menggunakan fallback environment", camErr);
-                }
-
-                // Mulai Scanner
-                await html5QrCode.start(cameraConfig, config, onScanSuccess, (error) => {
-                    // Ignore peringatan frame kosong saat tidak ada barcode di layar
-                });
+                );
                 
                 document.getElementById('reader-placeholder').style.display = 'none';
             } catch (err) {
                 console.error("Camera Error:", err);
-                // PERBAIKAN 3: Pesan error spesifik agar tahu penyebabnya
-                let errorMsg = "Gagal mengakses kamera.";
-                if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
-                    errorMsg = "Akses ditolak. Izinkan kamera di pengaturan browser Anda (Ikon gembok di URL).";
+                
+                let errorMsg = "Gagal membuka kamera.";
+                if (err.name === 'NotAllowedError' || (err.message && err.message.includes('permission'))) {
+                    errorMsg = "Akses ditolak! Klik ikon gembok 🔒 di URL browser untuk mengizinkan.";
                 } else if (err.name === 'NotFoundError') {
-                    errorMsg = "Kamera tidak ditemukan di perangkat ini.";
+                    errorMsg = "Kamera tidak ditemukan.";
+                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                    errorMsg = "Kamera sedang dipakai oleh aplikasi lain di latar belakang.";
                 }
                 
                 showToast(errorMsg, "error");
