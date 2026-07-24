@@ -221,6 +221,12 @@
                         <input type="file" accept="image/*" capture="environment" id="optionalCameraInput" class="hidden">
                     </div>
                 </div>
+
+                <!-- FORM KETERANGAN (BARU DITAMBAHKAN) -->
+                <div class="mb-4 pt-4 border-t border-gray-100">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Keterangan / Laporan Kondisi</label>
+                    <textarea id="reportNote" rows="2" placeholder="Ketik kondisi lokasi (Aman / Ada perusakan / dll)..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none transition resize-none"></textarea>
+                </div>
                 
                 <div class="flex gap-3 mt-4">
                     <button id="cancelPhotoBtn" class="flex-[0.4] bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm py-3.5 text-center transition">
@@ -498,6 +504,9 @@
             cameraLabel.classList.remove('hidden'); compressedImageBase64 = null;
             optionalPhotosBase64 = []; optionalCameraInput.value = ''; renderOptionalPhotos();
             
+            // Kosongkan form keterangan saat membuka form baru
+            document.getElementById('reportNote').value = ''; 
+            
             submitReportBtn.disabled = true;
             submitReportBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
@@ -591,12 +600,17 @@
             
             try {
                 const position = await getCurrentLocation();
+                
+                // Ambil isi teks dari textarea keterangan
+                const noteValue = document.getElementById('reportNote').value.trim();
+                
                 const payload = {
                     petugas: currentOfficerName,
                     shift: currentShift,
                     lokasi: pendingCheckpointId,
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
+                    keterangan: noteValue || "Aman (Tanpa Catatan)", // Kirim keterangan ke backend
                     fotoBase64: compressedImageBase64,
                     fotoTambahan: optionalPhotosBase64
                 };
