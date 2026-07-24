@@ -150,18 +150,20 @@
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
                             <p class="text-[10px] text-gray-500 uppercase font-semibold">Titik Selesai</p>
                             <p id="dashScanCount" class="text-sm font-bold text-green-600 mt-1">0 Titik</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Big Scan Button CTA -->
             <div class="flex justify-center mb-8 mt-4">
-                <!-- PERUBAHAN 1: Mengubah tombol menjadi pemanggil Kamera Asli HP -->
-                <label for="scanFileInput" class="relative group cursor-pointer">
+                <button id="openScannerBtn" class="relative group cursor-pointer border-none bg-transparent outline-none">
                     <div class="absolute inset-0 bg-blue-400 rounded-full blur-md opacity-40 group-hover:opacity-60 transition duration-300"></div>
                     <div class="relative bg-gradient-to-br from-blue-500 to-blue-700 w-40 h-40 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-95 transition-all">
                         <i class="fa-solid fa-qrcode text-5xl mb-2"></i>
                         <span class="font-bold text-sm tracking-wide mt-1">SCAN LOKASI</span>
                     </div>
-                </label>
-                <!-- Input ini yang memicu sistem Kamera Bawaan HP -->
-                <input type="file" accept="image/*" capture="environment" id="scanFileInput" class="hidden">
+                </button>
             </div>
 
             <!-- Recent Activity -->
@@ -266,9 +268,28 @@
         </div>
     </main>
 
-    <!-- PERUBAHAN 3: Layar kamera bawaan web dihilangkan, sisa ini saja -->
-    <section id="view-scanner" class="hidden">
-        <div id="reader"></div>
+    <!-- KEMBALIKAN LAYAR SCANNER LIVE -->
+    <section id="view-scanner" class="view-section flex-col hidden z-50">
+        <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-20 bg-gradient-to-b from-black/80 to-transparent">
+            <button id="backToDashFromScan" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 transition text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Batal
+            </button>
+            <div class="text-white font-semibold tracking-wide text-sm flex items-center gap-2">
+                <i class="fa-solid fa-qrcode"></i> ARAHKAN KAMERA
+            </div>
+            <div class="w-20"></div> <!-- Spacer -->
+        </div>
+        
+        <div id="reader" class="bg-black relative w-full h-[100vh] flex items-center justify-center">
+            <div id="reader-placeholder" class="text-gray-400 flex flex-col items-center absolute z-0">
+                <i class="fa-solid fa-camera-rotate text-4xl mb-3 animate-pulse"></i>
+                <p class="text-sm">Menyiapkan Kamera...</p>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-10 left-0 right-0 text-center z-20 pointer-events-none">
+            <p class="text-white/70 text-xs bg-black/50 inline-block px-4 py-2 rounded-full backdrop-blur-sm">Posisikan barcode di tengah layar</p>
+        </div>
     </section>
 
     <script>
@@ -295,8 +316,11 @@
         const dashboardEmptyHistory = document.getElementById('dashboardEmptyHistory');
         const clearHistoryBtn = document.getElementById('clearHistoryBtn');
         
-        // VARIABEL BARU
-        const scanFileInput = document.getElementById('scanFileInput');
+        // KEMBALIKAN VARIABEL SCANNER LIVE
+        const openScannerBtn = document.getElementById('openScannerBtn');
+        const backToDashFromScan = document.getElementById('backToDashFromScan');
+        const readerPlaceholder = document.getElementById('reader-placeholder');
+        
         const loadingTitle = document.getElementById('loadingTitle');
         const loadingText = document.getElementById('loadingText');
         
@@ -439,55 +463,86 @@
             localStorage.setItem('ptl_history', JSON.stringify(scanHistory));
         }
 
-        // --- PERUBAHAN LOGIKA SCAN: Menggunakan Foto dari Kamera Bawaan HP ---
-        scanFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // --- KEMBALIKAN LOGIKA SCANNER LIVE (OTOMATIS) DENGAN FALLBACK SUPER KUAT ---
+        openScannerBtn.addEventListener('click', startScanning);
+        
+        backToDashFromScan.addEventListener('click', async () => {
+            await stopScanning();
+            switchView('view-dashboard');
+        });
 
-            // Ubah teks overlay saat proses scan
-            loadingTitle.textContent = "Memindai Barcode";
-            loadingText.textContent = "Menganalisis gambar dari kamera...";
-            loadingOverlay.classList.remove('hidden');
+        async function startScanning() {
+            switchView('view-scanner');
+            if(readerPlaceholder) readerPlaceholder.style.display = 'flex';
 
             try {
                 if(!html5QrCode) {
                     html5QrCode = new Html5Qrcode("reader");
                 }
                 
-                // Gunakan library untuk membaca barcode langsung dari foto yang baru dijepret
-                const decodedText = await html5QrCode.scanFile(file, true);
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 }
+                };
                 
-                // Jika Barcode sukses terbaca
-                playBeep();
-                pendingCheckpointId = decodedText;
+                // Percobaan 1: Gunakan kamera belakang secara default
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                );
+                if(readerPlaceholder) readerPlaceholder.style.display = 'none';
                 
-                // Sembunyikan & kembalikan loading ke teks asal
-                loadingOverlay.classList.add('hidden');
-                loadingTitle.textContent = "Menyimpan Data";
-                loadingText.textContent = "Mengupload foto dan koordinat ke server...";
-                
-                showPhotoForm(decodedText);
             } catch (err) {
-                // Jika Barcode buram/tidak ada di foto
-                console.error("Scan Error: ", err);
-                loadingOverlay.classList.add('hidden');
+                console.warn("Gagal pakai facingMode, mencoba deteksi kamera manual...", err);
                 
-                loadingTitle.textContent = "Menyimpan Data";
-                loadingText.textContent = "Mengupload foto dan koordinat ke server...";
-                
-                showToast("Barcode tidak terbaca! Pastikan foto fokus, terang, dan tidak bergeser.", "error");
+                // Percobaan 2 (Fallback): Deteksi ID kamera jika mode default ditolak perangkat
+                try {
+                    const cameras = await Html5Qrcode.getCameras();
+                    if (cameras && cameras.length > 0) {
+                        // Cari kamera belakang
+                        let backCamera = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('belakang'));
+                        if (!backCamera) backCamera = cameras[cameras.length - 1]; // Biasanya kamera terakhir adalah belakang
+                        
+                        await html5QrCode.start(
+                            backCamera.id,
+                            { fps: 10, qrbox: { width: 250, height: 250 } },
+                            onScanSuccess,
+                            onScanFailure
+                        );
+                        if(readerPlaceholder) readerPlaceholder.style.display = 'none';
+                    } else {
+                        throw new Error("Tidak ada kamera fisik terdeteksi.");
+                    }
+                } catch (fallbackErr) {
+                    console.error(fallbackErr);
+                    // Peringatan agar pengguna tahu penyebab gagalnya
+                    alert("Akses Kamera Ditolak Browser!\n\nCara memperbaiki:\n1. Buka web ini melalui Browser Asli (Chrome), BUKAN dari dalam link WhatsApp.\n2. Ketuk ikon gembok 🔒 di sebelah nama web (atas), pilih 'Izin', lalu AKTIFKAN kamera.");
+                    showToast("Gagal membuka kamera.", "error");
+                    switchView('view-dashboard');
+                }
             }
-            
-            // Reset input file
-            e.target.value = '';
-        });
+        }
 
-        // Blokir fungsi lama yang tidak dipakai
-        // openScannerBtn.addEventListener('click', startScanning);
-        // backToDashFromScan.addEventListener('click', async () => { ... });
-        // async function startScanning() { ... }
-        // async function stopScanning() { ... }
-        // async function onScanSuccess(decodedText) { ... }
+        async function stopScanning() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch (e) {
+                    console.error("Gagal menghentikan kamera", e);
+                }
+            }
+        }
+
+        function onScanFailure(error) { /* Abaikan pembacaan frame yang gagal */ }
+
+        async function onScanSuccess(decodedText) {
+            playBeep();
+            await stopScanning();
+            pendingCheckpointId = decodedText;
+            showPhotoForm(decodedText);
+        }
 
         function showPhotoForm(locationId) {
             switchView('view-photo');
