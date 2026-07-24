@@ -372,13 +372,22 @@
         });
 
         logoutBtn.addEventListener('click', () => {
-            if(confirm("Apakah Anda yakin ingin keluar dari sesi shift ini?")) {
+            if(confirm("Apakah Anda yakin ingin mengakhiri shift ini? (Data riwayat di HP akan otomatis direset)")) {
+                // 1. Kosongkan variabel memori saat ini
                 currentOfficerName = '';
                 currentShift = '';
+                scanHistory = []; 
+                
+                // 2. Hapus seluruh data dari penyimpanan (Local Storage) HP
                 localStorage.removeItem('ptl_name');
                 localStorage.removeItem('ptl_shift');
+                localStorage.removeItem('ptl_history'); 
+                
+                // 3. Reset form inputan kembali ke awal
                 officerNameInput.value = '';
                 officerShiftInput.value = '';
+                
+                // 4. Kembali ke halaman login
                 switchView('view-login');
             }
         });
