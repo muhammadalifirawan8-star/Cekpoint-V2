@@ -145,7 +145,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
                             <p class="text-[10px] text-gray-500 uppercase font-semibold">Shift Aktif</p>
-                            <p id="dashShift" class="text-sm font-bold text-blue-700 mt-1">Pagi</p>
+                            <p id="dashShift" class="text-sm font-bold text-blue-700 mt-1">Shift 1</p>
                         </div>
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
                             <p class="text-[10px] text-gray-500 uppercase font-semibold">Titik Selesai</p>
@@ -379,7 +379,8 @@
 
         function updateDashboardUI() {
             dashOfficerName.textContent = currentOfficerName;
-            dashShift.textContent = currentShift.split(' ')[0]; 
+            // Memotong teks sebelum tanda kurung "(" agar yang tampil adalah "Shift 1", bukan terpotong di spasi
+            dashShift.textContent = currentShift.split(' (')[0]; 
             renderHistory();
         }
 
