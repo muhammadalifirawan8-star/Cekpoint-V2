@@ -441,19 +441,61 @@
         async function startScanning() {
             switchView('view-scanner');
             document.getElementById('reader-placeholder').style.display = 'flex';
+            
             try {
                 if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: window.innerHeight / window.innerWidth };
-                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+                
+                // PERBAIKAN 1: Buat kotak scan responsif & hapus aspectRatio agar gambar TIDAK MELAR (distorsi)
+                const boxSize = Math.min(window.innerWidth * 0.7, 250); 
+                const config = { 
+                    fps: 15, // Naikkan FPS agar lebih cepat merespon
+                    qrbox: { width: boxSize, height: boxSize },
+                    disableFlip: false
+                };
+
+                // PERBAIKAN 2: Deteksi eksplisit daftar kamera HP
+                let cameraConfig = { facingMode: "environment" }; // Default ke kamera belakang
+                
+                try {
+                    const devices = await Html5Qrcode.getCameras();
+                    if (devices && devices.length > 0) {
+                        // Coba cari kamera yang ada kata 'back' atau 'belakang'
+                        const backCamera = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('belakang'));
+                        if (backCamera) {
+                            cameraConfig = backCamera.id; // Gunakan ID kamera fisik langsung
+                        }
+                    }
+                } catch (camErr) {
+                    console.warn("Gagal mendapatkan list kamera, menggunakan fallback environment", camErr);
+                }
+
+                // Mulai Scanner
+                await html5QrCode.start(cameraConfig, config, onScanSuccess, (error) => {
+                    // Ignore peringatan frame kosong saat tidak ada barcode di layar
+                });
+                
                 document.getElementById('reader-placeholder').style.display = 'none';
             } catch (err) {
-                showToast("Gagal mengakses kamera.", "error");
+                console.error("Camera Error:", err);
+                // PERBAIKAN 3: Pesan error spesifik agar tahu penyebabnya
+                let errorMsg = "Gagal mengakses kamera.";
+                if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
+                    errorMsg = "Akses ditolak. Izinkan kamera di pengaturan browser Anda (Ikon gembok di URL).";
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = "Kamera tidak ditemukan di perangkat ini.";
+                }
+                
+                showToast(errorMsg, "error");
                 switchView('view-dashboard');
             }
         }
 
         async function stopScanning() {
-            if (html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch(e) { console.error("Error stopping", e); }
+            }
         }
 
         async function onScanSuccess(decodedText) {
