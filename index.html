@@ -4,459 +4,493 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CekPoint - Patroli Tol Makassar</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { 
-            font-family: 'Inter', sans-serif; 
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
             -webkit-tap-highlight-color: transparent;
-            background-color: #f8fafc;
         }
         
-        /* Animasi Transisi Halaman (Page Separation) */
-        .page-section {
+        /* Smooth View Transitions */
+        .view-section {
             display: none;
-            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.3s ease-in-out forwards;
         }
-        .page-section.active {
-            display: block;
+        .view-section.active {
+            display: flex;
         }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Loader */
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #3b82f6;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+        /* Fullscreen Scanner Customization */
+        #view-scanner {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: black;
+            z-index: 100;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        #reader {
+            width: 100%;
+            height: 100vh;
+            border: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        #reader video {
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
+        #reader__dashboard_section_csr button {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            margin-top: 20px !important;
+        }
+
+        /* Toast Animation */
+        .toast-enter { transform: translateY(100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Custom Scrollbar for history */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
-    <header class="bg-blue-700 text-white shadow-lg sticky top-0 z-40" id="mainAppHeader" style="display: none;">
-        <div class="px-4 py-3 flex justify-between items-center">
+    <header id="mainAppHeader" class="bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-5 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                <div class="bg-white p-2 rounded-xl text-blue-700 shadow-sm">
+                    <i class="fa-solid fa-road-barrier text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-sm leading-tight">CekPoint</h1>
-                    <p class="text-[10px] text-blue-200 uppercase tracking-wider">Patroli Tol Makassar</p>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">CekPoint</h1>
+                    <p class="text-[10px] text-blue-200 uppercase tracking-widest">Patroli Tol Makassar</p>
                 </div>
             </div>
-            <div class="flex flex-col items-end">
-                <span id="realtimeClock" class="font-bold text-sm">00:00:00</span>
-                <button id="logoutBtn" class="text-xs text-blue-200 hover:text-white mt-1 flex items-center gap-1 transition">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+            <div class="flex items-center gap-3">
+                <div id="clockDisplay" class="text-white font-mono text-xs bg-black/20 px-2.5 py-1.5 rounded-lg border border-white/10 text-center min-w-[75px] backdrop-blur-sm">--:--:--</div>
+                <button id="logoutBtn" class="text-blue-200 hover:text-white transition p-2 hidden">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="w-full max-w-md mx-auto min-h-screen relative overflow-x-hidden">
+    <main class="container mx-auto px-4 py-6 flex-1 max-w-md w-full flex flex-col relative">
         
-        <!-- PAGE 1: LOGIN -->
-        <section id="login-page" class="page-section p-6 flex flex-col justify-center min-h-screen bg-gradient-to-b from-blue-700 to-blue-900 text-white">
+        <section id="view-login" class="view-section active flex-1 flex-col justify-center pb-10">
             <div class="text-center mb-8">
-                <div class="inline-block bg-white p-4 rounded-full mb-4 shadow-lg">
-                    <img src="https://api.iconify.design/noto:motorway.svg" alt="Toll" class="w-16 h-16">
+                <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <i class="fa-solid fa-user-shield text-4xl text-blue-600"></i>
                 </div>
-                <h2 class="text-2xl font-bold mb-1">CekPoint Patroli</h2>
-                <p class="text-blue-200 text-sm">Tol Makassar Raya</p>
+                <h2 class="text-2xl font-bold text-gray-800">Mulai Sesi Patroli</h2>
+                <p class="text-sm text-gray-500 mt-1">Silakan masukkan identitas Anda</p>
             </div>
 
-            <div class="bg-white text-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="font-bold text-lg mb-4 text-center border-b pb-3">Identitas Petugas</h3>
-                
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Nama Lengkap</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-user text-gray-400"></i>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Nama Petugas</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="officerName" placeholder="Ketik nama lengkap..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-10 p-3.5 outline-none transition">
                         </div>
-                        <input type="text" id="officerName" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition text-sm font-medium" placeholder="Masukkan nama Anda">
-                    </div>
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Pilih Shift</label>
-                    <div class="grid grid-cols-1 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="shift" value="Pagi (06:30 - 14:30)" class="peer sr-only">
-                            <div class="p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition flex items-center gap-3">
-                                <i class="fa-solid fa-sun text-lg"></i>
-                                <span class="font-medium text-sm">Pagi (06:30 - 14:30)</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="shift" value="Siang (14:30 - 22:30)" class="peer sr-only">
-                            <div class="p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition flex items-center gap-3">
-                                <i class="fa-solid fa-cloud-sun text-lg"></i>
-                                <span class="font-medium text-sm">Siang (14:30 - 22:30)</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="shift" value="Malam (22:30 - 06:30)" class="peer sr-only">
-                            <div class="p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition flex items-center gap-3">
-                                <i class="fa-solid fa-moon text-lg"></i>
-                                <span class="font-medium text-sm">Malam (22:30 - 06:30)</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <button id="startSessionBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition active:scale-95">
-                    Mulai Tugas
-                </button>
-            </div>
-        </section>
-
-        <!-- PAGE 2: DASHBOARD -->
-        <section id="dashboard-page" class="page-section p-4 pb-24">
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-5">
-                <p class="text-sm text-gray-500 mb-1">Selamat bertugas,</p>
-                <h2 class="text-xl font-bold text-gray-800" id="displayOfficerName">Nama Petugas</h2>
-                
-                <div class="flex gap-3 mt-4">
-                    <div class="flex-1 bg-blue-50 rounded-xl p-3 border border-blue-100 flex items-center gap-3">
-                        <div class="bg-blue-100 p-2 rounded-lg text-blue-600">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold">Shift Aktif</p>
-                            <p class="text-xs font-bold text-blue-800" id="displayShift">Pagi</p>
-                        </div>
-                    </div>
-                    <div class="flex-1 bg-green-50 rounded-xl p-3 border border-green-100 flex items-center gap-3">
-                        <div class="bg-green-100 p-2 rounded-lg text-green-600">
-                            <i class="fa-solid fa-check-double"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold">Discan</p>
-                            <p class="text-sm font-bold text-green-800"><span id="scanCount">0</span> Titik</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TOMBOL SCAN (SEKARANG MEMBUKA KAMERA HP LANGSUNG) -->
-            <label for="qrNativeInput" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-bold py-5 rounded-2xl shadow-lg transition active:scale-95 flex flex-col items-center justify-center gap-2 mb-6 group border-b-4 border-blue-900 cursor-pointer">
-                <i class="fa-solid fa-camera text-3xl group-hover:scale-110 transition"></i>
-                <span class="text-lg tracking-wide text-center">BUKA KAMERA HP<br><span class="text-xs font-normal opacity-80">Foto Barcode di Titik Lokasi</span></span>
-            </label>
-            <!-- Input Kamera HP Tersembunyi -->
-            <input type="file" accept="image/*" capture="environment" id="qrNativeInput" class="hidden">
-            <!-- Div tersembunyi untuk proses membaca gambar -->
-            <div id="reader" class="hidden"></div>
-
-            <!-- Riwayat -->
-            <div>
-                <h3 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-list-ul"></i> Riwayat Patroli Hari Ini
-                </h3>
-                <div id="historyList" class="space-y-3">
-                    <div class="text-center py-6 text-gray-400 text-sm italic" id="emptyHistoryMsg">
-                        Belum ada titik yang dikunjungi.
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PAGE 3: DOKUMENTASI & FOTO -->
-        <section id="dokumentasi-page" class="page-section p-4 pb-24">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-                <div class="bg-blue-50 px-4 py-3 border-b border-blue-100 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-location-dot text-blue-600 text-xl"></i>
-                        <div>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold">Lokasi Barcode Terbaca</p>
-                            <p class="font-bold text-sm text-blue-800 break-all" id="scannedLocationDisplay">-</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-circle-check text-green-500 text-xl"></i>
-                </div>
-                
-                <div class="p-4">
-                    <!-- FOTO BUKTI RUTIN (WAJIB) -->
-                    <div class="mb-5 border-b pb-5 border-dashed">
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Foto Area Sekitar <span class="text-red-500">*</span></label>
-                        <p class="text-[10px] text-gray-500 mb-2">Wajib: Ambil foto area sekitar sebagai bukti fisik kehadiran.</p>
-                        <div class="relative w-full aspect-video bg-blue-50/50 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center overflow-hidden group">
-                            <img id="photoPreview" class="hidden w-full h-full object-cover" />
-                            <label for="cameraInput" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-100/50 transition z-10" id="cameraLabel">
-                                <div class="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition border border-blue-100">
-                                    <i class="fa-solid fa-camera text-2xl text-blue-500"></i>
-                                </div>
-                                <span class="text-[10px] text-blue-700 font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm text-center">Ketuk Buka Kamera<br>Foto Lingkungan</span>
-                            </label>
-                            <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden">
-                        </div>
-                    </div>
-
-                    <!-- FOTO KEJADIAN (OPSIONAL) -->
-                    <div class="mb-5 border-b pb-5 border-dashed">
-                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">2. Foto Kerusakan Aset (Opsional)</label>
-                        <p class="text-[10px] text-gray-500 mb-2">Isi jika ada kejadian aneh, pencurian, atau aset yang rusak.</p>
-                        <div class="relative w-full aspect-video bg-red-50/50 rounded-xl border-2 border-dashed border-red-300 flex items-center justify-center overflow-hidden group">
-                            <img id="incidentPhotoPreview" class="hidden w-full h-full object-cover" />
-                            <label for="incidentCameraInput" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-red-100/50 transition z-10" id="incidentCameraLabel">
-                                <div class="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition border border-red-100">
-                                    <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
-                                </div>
-                                <span class="text-[10px] text-red-600 font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm text-center">Ketuk Buka Kamera<br>Foto Insiden/Kerusakan</span>
-                            </label>
-                            <input type="file" accept="image/*" capture="environment" id="incidentCameraInput" class="hidden">
-                        </div>
-                    </div>
-
-                    <!-- KETERANGAN (OPSIONAL) -->
-                    <div class="mb-6">
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">3. Keterangan Kejadian (Opsional)</label>
-                        <textarea id="keteranganInput" rows="3" placeholder="Ketik keterangan atau catatan kerusakan di sini..." class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none transition resize-none"></textarea>
                     </div>
                     
-                    <div class="flex gap-3 mt-6">
-                        <button id="cancelPhotoBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition text-sm">Kembali</button>
-                        <button id="submitReportBtn" disabled class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition opacity-50 cursor-not-allowed flex items-center justify-center gap-2 text-sm">
-                            <span id="submitBtnText">Kirim Laporan</span>
-                            <div id="submitLoader" class="loader hidden"></div>
-                        </button>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Shift Kerja</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-clock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <select id="officerShift" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-10 p-3.5 outline-none transition appearance-none">
+                                <option value="" disabled selected>Pilih Shift Saat Ini</option>
+                                <option value="Pagi (06:30 - 14:30)">Pagi (06:30 - 14:30)</option>
+                                <option value="Siang (14:30 - 22:30)">Siang (14:30 - 22:30)</option>
+                                <option value="Malam (22:30 - 06:30)">Malam (22:30 - 06:30)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                        </div>
                     </div>
+                    
+                    <button id="saveIdentityBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm px-5 py-4 text-center transition shadow-md shadow-blue-600/20 mt-4 active:scale-[0.98]">
+                        Masuk & Siapkan Perangkat <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
                 </div>
             </div>
         </section>
 
+        <section id="view-dashboard" class="view-section flex-1 flex-col">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-0 opacity-50"></div>
+                <div class="relative z-10">
+                    <p class="text-sm text-gray-500">Selamat bertugas,</p>
+                    <h2 id="dashOfficerName" class="text-xl font-bold text-gray-800 mb-4">Petugas</h2>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-[10px] text-gray-500 uppercase font-semibold">Shift Aktif</p>
+                            <p id="dashShift" class="text-sm font-bold text-blue-700 mt-1">Pagi</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-[10px] text-gray-500 uppercase font-semibold">Titik Selesai</p>
+                            <p id="dashScanCount" class="text-sm font-bold text-green-600 mt-1">0 Titik</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center mb-8 mt-4">
+                <button id="openScannerBtn" class="relative group">
+                    <div class="absolute inset-0 bg-blue-400 rounded-full blur-md opacity-40 group-hover:opacity-60 transition duration-300"></div>
+                    <div class="relative bg-gradient-to-br from-blue-500 to-blue-700 w-40 h-40 rounded-full flex flex-col items-center justify-center text-white shadow-xl shadow-blue-600/30 active:scale-95 transition-all">
+                        <i class="fa-solid fa-qrcode text-5xl mb-2"></i>
+                        <span class="font-bold text-sm tracking-wide mt-1">SCAN LOKASI</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="flex-1 bg-white rounded-t-3xl shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] border-t border-x border-gray-100 -mx-4 px-5 pt-6 pb-4 mt-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-800">Riwayat Terkini</h3>
+                    <button id="clearHistoryBtn" class="text-xs text-gray-400 hover:text-red-500 transition">Bersihkan</button>
+                </div>
+                <div class="max-h-[30vh] overflow-y-auto custom-scrollbar pr-2">
+                    <ul id="dashboardHistoryList" class="space-y-3"></ul>
+                    <div id="dashboardEmptyHistory" class="text-center py-8 flex flex-col items-center">
+                        <i class="fa-solid fa-folder-open text-3xl text-gray-200 mb-2"></i>
+                        <p class="text-sm text-gray-400">Belum ada titik yang diperiksa hari ini.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="view-photo" class="view-section flex-1 flex-col">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+                    <div class="bg-green-100 p-2 rounded-full text-green-600">
+                        <i class="fa-solid fa-check text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-800">Lokasi Ditemukan!</h2>
+                        <p id="scannedLocationDisplay" class="text-xs text-blue-600 font-medium break-all"></p>
+                    </div>
+                </div>
+
+                <!-- Foto Utama -->
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Ambil Foto Bukti Sekitar</label>
+                    <div class="relative w-full aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group">
+                        <img id="photoPreview" class="hidden w-full h-full object-cover" />
+                        <label for="cameraInput" class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200/50 transition z-10" id="cameraLabel">
+                            <div class="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-camera text-2xl text-blue-500"></i>
+                            </div>
+                            <span class="text-xs text-gray-600 font-medium bg-white/90 px-3 py-1 rounded-full shadow-sm">Ketuk Buka Kamera HP</span>
+                        </label>
+                        <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Foto Tambahan / Opsional -->
+                <div class="mb-4 pt-4 border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto Kejadian / Aset (Opsional)</label>
+                        <span id="optionalPhotoCount" class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full">0/3</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mb-3 leading-tight">Tambahkan detail foto jika terdapat temuan pencurian atau perusakan aset tol.</p>
+                    
+                    <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-2 min-h-[5rem]" id="optionalPhotosContainer">
+                        <!-- Tombol Tambah Foto Opsional -->
+                        <label for="optionalCameraInput" class="shrink-0 w-20 h-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200/50 transition" id="addOptionalPhotoBtn">
+                            <i class="fa-solid fa-plus text-gray-400 mb-1"></i>
+                            <span class="text-[9px] text-gray-500 font-medium">Tambah</span>
+                        </label>
+                        <input type="file" accept="image/*" capture="environment" id="optionalCameraInput" class="hidden">
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-4">
+                    <button id="cancelPhotoBtn" class="flex-[0.4] bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm py-3.5 text-center transition">
+                        Batal
+                    </button>
+                    <button id="submitReportBtn" class="flex-[0.6] bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl text-sm py-3.5 text-center transition shadow-md shadow-green-600/20 opacity-50 cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                        <i class="fa-regular fa-paper-plane"></i> Kirim
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+            <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-[80vw]">
+                <div class="relative w-16 h-16 mb-4">
+                    <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-1">Menyimpan Data</h3>
+                <p class="text-xs text-gray-500 text-center">Mengupload foto dan koordinat ke server...</p>
+            </div>
+        </div>
     </main>
 
-    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 translate-y-10 z-50 flex items-center gap-3 w-[90%] max-w-sm pointer-events-none">
-        <div id="toastIcon" class="text-lg"></div>
-        <div id="toastMessage" class="text-sm font-medium leading-tight"></div>
-    </div>
+    <section id="view-scanner" class="view-section flex-col">
+        <div class="absolute top-0 left-0 right-0 p-5 flex items-center justify-between z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <button id="backToDashFromScan" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 transition text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Batal
+            </button>
+            <div class="text-white font-semibold tracking-wide text-sm flex items-center gap-2">
+                <i class="fa-solid fa-qrcode"></i> ARAHKAN KAMERA
+            </div>
+            <div class="w-20"></div> 
+        </div>
+        
+        <div id="reader" class="bg-black relative">
+            <div id="reader-placeholder" class="text-gray-400 flex flex-col items-center absolute z-0">
+                <i class="fa-solid fa-camera-rotate text-4xl mb-3 animate-pulse"></i>
+                <p class="text-sm">Menyiapkan Kamera...</p>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-10 left-0 right-0 text-center z-10 pointer-events-none">
+            <p class="text-white/70 text-xs bg-black/50 inline-block px-4 py-2 rounded-full backdrop-blur-sm">Posisikan barcode di tengah layar</p>
+        </div>
+    </section>
 
     <script>
-        // ==========================================
-        // URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA
-        // ==========================================
+        /**
+         * ==========================================
+         * KONFIGURASI URL GOOGLE APPS SCRIPT
+         * ==========================================
+         */
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzlL8qCA7HCHGMfjZyYNhtyHfc024IjVfstYI2azzghLu4g2OYFCD7V04c-DNla0KNv/exec"; 
-        // GANTI URL DI ATAS DENGAN URL DEPLOY MILIK ANDA!
 
+        // DOM Elements - Core
         const mainAppHeader = document.getElementById('mainAppHeader');
-        
-        // Element Inputs
-        const officerNameInput = document.getElementById('officerName');
-        const startSessionBtn = document.getElementById('startSessionBtn');
-        const displayOfficerName = document.getElementById('displayOfficerName');
-        const displayShift = document.getElementById('displayShift');
-        const scanCount = document.getElementById('scanCount');
-        const historyList = document.getElementById('historyList');
-        const emptyHistoryMsg = document.getElementById('emptyHistoryMsg');
-        
-        const qrNativeInput = document.getElementById('qrNativeInput');
         const logoutBtn = document.getElementById('logoutBtn');
-        const realtimeClock = document.getElementById('realtimeClock');
+        const clockDisplay = document.getElementById('clockDisplay');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // DOM Elements - Inputs & Views
+        const officerNameInput = document.getElementById('officerName');
+        const officerShiftInput = document.getElementById('officerShift');
+        const dashOfficerName = document.getElementById('dashOfficerName');
+        const dashShift = document.getElementById('dashShift');
+        const dashScanCount = document.getElementById('dashScanCount');
+        const dashboardHistoryList = document.getElementById('dashboardHistoryList');
+        const dashboardEmptyHistory = document.getElementById('dashboardEmptyHistory');
         
-        // Form Elements
+        // DOM Elements - Forms & Photos
         const scannedLocationDisplay = document.getElementById('scannedLocationDisplay');
         const cameraInput = document.getElementById('cameraInput');
         const photoPreview = document.getElementById('photoPreview');
         const cameraLabel = document.getElementById('cameraLabel');
-        const incidentCameraInput = document.getElementById('incidentCameraInput');
-        const incidentPhotoPreview = document.getElementById('incidentPhotoPreview');
-        const incidentCameraLabel = document.getElementById('incidentCameraLabel');
-        const keteranganInput = document.getElementById('keteranganInput');
-
-        const cancelPhotoBtn = document.getElementById('cancelPhotoBtn');
+        const optionalCameraInput = document.getElementById('optionalCameraInput');
+        const optionalPhotosContainer = document.getElementById('optionalPhotosContainer');
+        const addOptionalPhotoBtn = document.getElementById('addOptionalPhotoBtn');
+        const optionalPhotoCount = document.getElementById('optionalPhotoCount');
         const submitReportBtn = document.getElementById('submitReportBtn');
-        const submitBtnText = document.getElementById('submitBtnText');
-        const submitLoader = document.getElementById('submitLoader');
-        const toast = document.getElementById('toast');
 
         // State Variables
+        let html5QrCode;
         let currentOfficerName = localStorage.getItem('ptl_name') || '';
         let currentShift = localStorage.getItem('ptl_shift') || '';
         let scanHistory = JSON.parse(localStorage.getItem('ptl_history')) || [];
-        
         let pendingCheckpointId = null;
         let compressedImageBase64 = null;
-        let compressedIncidentImageBase64 = null;
-
-        // --- SISTEM ROUTING (Pemisahan Halaman) ---
-        function handleRoute() {
-            // Ambil hash dari URL (misal: #dashboard), default ke #login
-            const hash = window.location.hash || '#login';
-            
-            // Sembunyikan semua halaman
-            document.querySelectorAll('.page-section').forEach(page => {
-                page.classList.remove('active');
-            });
-
-            // Tampilkan Header kecuali di halaman login
-            if (hash === '#login') {
-                mainAppHeader.style.display = 'none';
-            } else {
-                mainAppHeader.style.display = 'block';
-            }
-
-            // Validasi: Jika belum login tapi coba akses dashboard/dokumentasi, paksa ke login
-            if (hash !== '#login' && (!currentOfficerName || !currentShift)) {
-                window.location.hash = '#login';
-                return;
-            }
-
-            // Tampilkan halaman yang sesuai
-            const targetPage = document.getElementById(hash.substring(1) + '-page');
-            if (targetPage) {
-                targetPage.classList.add('active');
-            } else {
-                window.location.hash = '#login'; // Fallback
-            }
-        }
-        // Dengarkan saat tombol "Back" atau "Forward" ditekan di HP
-        window.addEventListener('hashchange', handleRoute);
+        let optionalPhotosBase64 = []; // Menyimpan array foto tambahan
 
         setInterval(() => {
             const now = new Date();
-            realtimeClock.textContent = now.toLocaleTimeString('id-ID', { hour12: false });
+            if(clockDisplay) clockDisplay.innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second:'2-digit' });
         }, 1000);
 
-        function showToast(message, type = 'success') {
-            const icon = type === 'success' ? '<i class="fa-solid fa-check-circle text-green-400"></i>' : (type === 'info' ? '<i class="fa-solid fa-spinner fa-spin text-blue-400"></i>' : '<i class="fa-solid fa-circle-exclamation text-red-400"></i>');
-            document.getElementById('toastIcon').innerHTML = icon;
-            document.getElementById('toastMessage').textContent = message;
-            toast.classList.remove('opacity-0', 'translate-y-10');
-            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-10'); }, type === 'info' ? 5000 : 3000);
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'square';
+            oscillator.frequency.value = 850;
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            if(viewId === 'view-dashboard') {
+                logoutBtn.classList.remove('hidden');
+                mainAppHeader.classList.remove('hidden');
+                updateDashboardUI();
+            } else if (viewId === 'view-scanner') {
+                mainAppHeader.classList.add('hidden');
+            } else {
+                logoutBtn.classList.add('hidden');
+                mainAppHeader.classList.remove('hidden');
+            }
         }
 
         function initApp() {
             if (currentOfficerName && currentShift) {
-                displayOfficerName.textContent = currentOfficerName;
-                displayShift.textContent = currentShift.split(" ")[0]; 
-                renderHistory();
-                if(window.location.hash !== '#dokumentasi') {
-                    window.location.hash = '#dashboard';
-                }
+                switchView('view-dashboard');
+            } else {
+                switchView('view-login');
             }
-            handleRoute(); // Jalankan router saat pertama kali dibuka
         }
 
-        startSessionBtn.addEventListener('click', () => {
+        document.getElementById('saveIdentityBtn').addEventListener('click', () => {
             const name = officerNameInput.value.trim();
-            const shiftRadio = document.querySelector('input[name="shift"]:checked');
-
-            if (!name) { showToast("Silakan masukkan nama Anda", "error"); return; }
-            if (!shiftRadio) { showToast("Silakan pilih shift Anda", "error"); return; }
-
+            const shift = officerShiftInput.value;
+            if (name.length < 3) return showToast("Masukkan nama lengkap yang valid", "error");
+            if (!shift) return showToast("Silakan pilih shift kerja", "error");
+            
             currentOfficerName = name;
-            currentShift = shiftRadio.value;
-            localStorage.setItem('ptl_name', currentOfficerName);
-            localStorage.setItem('ptl_shift', currentShift);
-            
-            displayOfficerName.textContent = currentOfficerName;
-            displayShift.textContent = currentShift.split(" ")[0];
-            
-            showToast("Selamat bertugas, " + currentOfficerName);
-            window.location.hash = '#dashboard'; // Pindah ke Dashboard
+            currentShift = shift;
+            localStorage.setItem('ptl_name', name);
+            localStorage.setItem('ptl_shift', shift);
+            switchView('view-dashboard');
+            showToast("Selamat bertugas, " + name, "success");
         });
 
         logoutBtn.addEventListener('click', () => {
-            if(confirm("Akhiri shift? Riwayat patroli di HP ini akan direset. Pastikan semua laporan telah dikirim.")) {
-                localStorage.removeItem('ptl_name');
-                localStorage.removeItem('ptl_shift');
-                localStorage.removeItem('ptl_history'); 
-                
-                currentOfficerName = '';
-                currentShift = '';
-                scanHistory = [];
-                
-                officerNameInput.value = '';
-                renderHistory();
-                window.location.hash = '#login'; // Kembali ke Login
+            if(confirm("Apakah Anda yakin ingin mengakhiri shift ini?")) {
+                currentOfficerName = ''; currentShift = ''; scanHistory = []; 
+                localStorage.removeItem('ptl_name'); localStorage.removeItem('ptl_shift'); localStorage.removeItem('ptl_history'); 
+                officerNameInput.value = ''; officerShiftInput.value = '';
+                switchView('view-login');
             }
         });
 
-        // MEMBACA BARCODE DARI FOTO KAMERA HP
-        qrNativeInput.addEventListener('change', e => {
-            if (e.target.files.length == 0) return;
-            const file = e.target.files[0];
-            
-            showToast("Menganalisa Barcode...", "info");
-            
-            const html5QrCode = new Html5Qrcode("reader");
-            
-            // Baca QR Code dari file foto (Scan Image)
-            html5QrCode.scanFile(file, true)
-                .then(decodedText => {
-                    playBeep();
-                    pendingCheckpointId = decodedText;
-                    prepareDokumentasiForm(decodedText);
-                    window.location.hash = '#dokumentasi'; // Pindah halaman ke Dokumentasi
-                })
-                .catch(err => {
-                    showToast("Barcode tidak terlihat! Pastikan foto barcode fokus & jelas.", "error");
-                });
-                
-            // Reset input agar bisa jepret foto lagi
-            qrNativeInput.value = "";
-        });
-
-        function playBeep() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = 'sine';
-            osc.frequency.value = 800;
-            gain.gain.setValueAtTime(1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.2);
+        function updateDashboardUI() {
+            dashOfficerName.textContent = currentOfficerName;
+            dashShift.textContent = currentShift.split(' ')[0]; 
+            renderHistory();
         }
 
-        function prepareDokumentasiForm(locationId) {
+        function renderHistory() {
+            dashScanCount.textContent = `${scanHistory.length} Titik`;
+            dashboardHistoryList.innerHTML = '';
+            
+            if(scanHistory.length === 0) {
+                dashboardEmptyHistory.classList.remove('hidden');
+                document.getElementById('clearHistoryBtn').classList.add('hidden');
+                return;
+            }
+            
+            dashboardEmptyHistory.classList.add('hidden');
+            document.getElementById('clearHistoryBtn').classList.remove('hidden');
+
+            scanHistory.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center justify-between";
+                const isSuccess = item.status === "Berhasil";
+                li.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${isSuccess ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            <i class="fa-solid ${isSuccess ? 'fa-check' : 'fa-xmark'}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-gray-800 truncate">${item.lokasi}</p>
+                            <p class="text-xs text-gray-500 flex items-center gap-1"><i class="fa-regular fa-clock text-[10px]"></i> ${item.time}</p>
+                        </div>
+                    </div>
+                `;
+                dashboardHistoryList.appendChild(li);
+            });
+        }
+
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if(confirm("Hapus tampilan riwayat sesi ini? (Data di server tetap aman)")) {
+                scanHistory = [];
+                localStorage.setItem('ptl_history', JSON.stringify([]));
+                renderHistory();
+            }
+        });
+
+        function addLogToHistory(lokasi, status) {
+            const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            scanHistory.unshift({ time, lokasi, status });
+            if(scanHistory.length > 20) scanHistory.pop();
+            localStorage.setItem('ptl_history', JSON.stringify(scanHistory));
+        }
+
+        document.getElementById('openScannerBtn').addEventListener('click', startScanning);
+        document.getElementById('backToDashFromScan').addEventListener('click', async () => {
+            await stopScanning(); switchView('view-dashboard');
+        });
+
+        async function startScanning() {
+            switchView('view-scanner');
+            document.getElementById('reader-placeholder').style.display = 'flex';
+            try {
+                if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: window.innerHeight / window.innerWidth };
+                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+                document.getElementById('reader-placeholder').style.display = 'none';
+            } catch (err) {
+                showToast("Gagal mengakses kamera.", "error");
+                switchView('view-dashboard');
+            }
+        }
+
+        async function stopScanning() {
+            if (html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();
+        }
+
+        async function onScanSuccess(decodedText) {
+            playBeep();
+            await stopScanning();
+            pendingCheckpointId = decodedText;
+            showPhotoForm(decodedText);
+        }
+
+        function showPhotoForm(locationId) {
+            switchView('view-photo');
             scannedLocationDisplay.textContent = locationId;
             
-            // Bersihkan form
+            // Reset Foto Utama
             cameraInput.value = '';
             photoPreview.src = '';
             photoPreview.classList.add('hidden');
             cameraLabel.classList.remove('hidden');
             compressedImageBase64 = null;
-
-            incidentCameraInput.value = '';
-            incidentPhotoPreview.src = '';
-            incidentPhotoPreview.classList.add('hidden');
-            incidentCameraLabel.classList.remove('hidden');
-            compressedIncidentImageBase64 = null;
-            keteranganInput.value = '';
+            
+            // Reset Foto Tambahan
+            optionalPhotosBase64 = [];
+            optionalCameraInput.value = '';
+            renderOptionalPhotos();
             
             submitReportBtn.disabled = true;
             submitReportBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        cancelPhotoBtn.addEventListener('click', () => {
-            pendingCheckpointId = null;
-            window.location.hash = '#dashboard'; // Batal, kembali ke Dashboard
+        document.getElementById('cancelPhotoBtn').addEventListener('click', () => {
+            pendingCheckpointId = null; switchView('view-dashboard');
         });
 
-        // Proses Foto Bukti Wajib
+        // Proses Gambar Utama
         cameraInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 photoPreview.src = event.target.result;
@@ -464,168 +498,139 @@
                 cameraLabel.classList.add('hidden');
             }
             reader.readAsDataURL(file);
-
             compressImage(file, 800, 800, 0.7).then(base64 => {
                 compressedImageBase64 = base64;
                 submitReportBtn.disabled = false;
                 submitReportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }).catch(() => showToast("Gagal memproses gambar", "error"));
+            }).catch(() => showToast("Gagal memproses gambar utama", "error"));
         });
 
-        // Proses Foto Insiden
-        incidentCameraInput.addEventListener('change', function(e) {
+        // Proses Gambar Opsional
+        function renderOptionalPhotos() {
+            document.querySelectorAll('.opt-photo-thumb').forEach(el => el.remove());
+            optionalPhotoCount.textContent = `${optionalPhotosBase64.length}/3`;
+            
+            if (optionalPhotosBase64.length >= 3) {
+                addOptionalPhotoBtn.classList.add('hidden');
+            } else {
+                addOptionalPhotoBtn.classList.remove('hidden');
+            }
+
+            optionalPhotosBase64.forEach((base64, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'opt-photo-thumb shrink-0 relative w-20 h-20 rounded-xl overflow-hidden shadow-sm border border-gray-200 group';
+                wrapper.innerHTML = `
+                    <img src="${base64}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removeOptionalPhoto(${index})" class="absolute top-1 right-1 bg-red-500/90 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 transition shadow-sm z-10">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+                optionalPhotosContainer.insertBefore(wrapper, addOptionalPhotoBtn);
+            });
+        }
+
+        window.removeOptionalPhoto = function(index) {
+            optionalPhotosBase64.splice(index, 1);
+            renderOptionalPhotos();
+        };
+
+        optionalCameraInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                incidentPhotoPreview.src = event.target.result;
-                incidentPhotoPreview.classList.remove('hidden');
-                incidentCameraLabel.classList.add('hidden');
-            }
-            reader.readAsDataURL(file);
-
             compressImage(file, 800, 800, 0.7).then(base64 => {
-                compressedIncidentImageBase64 = base64;
+                optionalPhotosBase64.push(base64);
+                renderOptionalPhotos();
+                e.target.value = ''; // Reset file input
             }).catch(() => showToast("Gagal memproses gambar kejadian", "error"));
         });
 
+        // Fungsi Kompresi Canvas
         function compressImage(file, maxWidth, maxHeight, quality) {
             return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.src = URL.createObjectURL(file);
-                img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > maxWidth || height > maxHeight) {
-                        const ratio = Math.min(maxWidth / width, maxHeight / height);
-                        width *= ratio;
-                        height *= ratio;
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', quality));
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width, height = img.height;
+                        if (width > height) {
+                            if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                        } else {
+                            if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                        }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = error => reject(error);
                 };
-                img.onerror = reject;
+                reader.onerror = error => reject(error);
             });
         }
 
-        submitReportBtn.addEventListener('click', () => {
+        submitReportBtn.addEventListener('click', async () => {
             if (!pendingCheckpointId || !compressedImageBase64) return;
+            loadingOverlay.classList.remove('hidden');
             
-            submitBtnText.textContent = "Mengirim...";
-            submitLoader.classList.remove('hidden');
-            submitReportBtn.disabled = true;
+            try {
+                const position = await getCurrentLocation();
+                const payload = {
+                    petugas: currentOfficerName,
+                    shift: currentShift,
+                    lokasi: pendingCheckpointId,
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    fotoBase64: compressedImageBase64,
+                    fotoTambahan: optionalPhotosBase64 // Array of up to 3 base64 strings
+                };
 
-            // Minta Lokasi GPS
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => sendDataToGAS(position.coords.latitude, position.coords.longitude),
-                    (error) => {
-                        showToast("Gagal mendapat GPS. Pastikan GPS aktif.", "error");
-                        sendDataToGAS("", ""); 
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                sendDataToGAS("", "");
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                if (result.status !== "success") throw new Error(result.message || "Error Server");
+
+                addLogToHistory(pendingCheckpointId, "Berhasil");
+                showToast(`Check point terkirim!`, "success");
+                
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (error) {
+                addLogToHistory(pendingCheckpointId, "Gagal");
+                showToast(error.message || "Gagal mencatat laporan. Periksa GPS/Koneksi.", "error");
+                loadingOverlay.classList.add('hidden');
+                switchView('view-dashboard'); 
             }
         });
 
-        function sendDataToGAS(lat, lng) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("URL_WEB_APP_ANDA")) {
-                showToast("URL Google Script belum diatur!", "error");
-                resetSubmitBtn();
-                return;
-            }
-
-            const payload = {
-                petugas: currentOfficerName,
-                shift: currentShift,
-                lokasi: pendingCheckpointId,
-                lat: lat,
-                lng: lng,
-                fotoBase64: compressedImageBase64,
-                fotoKejadianBase64: compressedIncidentImageBase64,
-                keterangan: keteranganInput.value.trim()
-            };
-
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === "success") {
-                    showToast("Laporan terkirim sukses!");
-                    saveToHistory(pendingCheckpointId);
-                    
-                    // Otomatis kembali ke dashboard dan refresh riwayat
-                    setTimeout(() => {
-                        resetSubmitBtn();
-                        window.location.hash = '#dashboard';
-                        // Force reload halaman agar memory benar-benar fresh
-                        window.location.reload(); 
-                    }, 1500);
-                } else {
-                    showToast("Error: " + data.message, "error");
-                    resetSubmitBtn();
-                }
-            })
-            .catch(error => {
-                showToast("Gagal koneksi ke server.", "error");
-                resetSubmitBtn();
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) reject(new Error("Browser tidak mendukung GPS"));
+                navigator.geolocation.getCurrentPosition(resolve, () => {
+                    reject(new Error("Akses lokasi ditolak. Aktifkan GPS."));
+                }, { enableHighAccuracy: true, timeout: 15000 });
             });
         }
 
-        function resetSubmitBtn() {
-            submitBtnText.textContent = "Kirim Laporan";
-            submitLoader.classList.add('hidden');
-            submitReportBtn.disabled = false;
+        function showToast(message, type = "success") {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-max px-5 py-4 rounded-xl shadow-2xl text-white font-medium text-sm flex items-center gap-3 z-[200] toast-enter`;
+            toast.classList.add(type === "success" ? 'bg-gray-900' : 'bg-red-600');
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-green-400' : 'fa-circle-exclamation text-white'} text-xl"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('toast-enter-active'), 10);
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
 
-        function saveToHistory(locationId) {
-            const time = new Date().toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute:'2-digit' });
-            scanHistory.unshift({ id: locationId, time: time });
-            if(scanHistory.length > 20) scanHistory.pop();
-            localStorage.setItem('ptl_history', JSON.stringify(scanHistory));
-        }
-
-        function renderHistory() {
-            scanCount.textContent = scanHistory.length;
-            historyList.innerHTML = '';
-            
-            if(scanHistory.length === 0) {
-                emptyHistoryMsg.style.display = 'block';
-                return;
-            }
-            
-            emptyHistoryMsg.style.display = 'none';
-            scanHistory.forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'bg-gray-50 border border-gray-100 p-3 rounded-xl flex justify-between items-center';
-                el.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="bg-blue-100 text-blue-600 p-2 rounded-full min-w-max">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-gray-800 truncate">${item.id}</p>
-                            <p class="text-[10px] text-gray-500">Tercatat sukses</p>
-                        </div>
-                    </div>
-                    <div class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded shadow-sm border border-gray-100">
-                        ${item.time}
-                    </div>
-                `;
-                historyList.appendChild(el);
-            });
-        }
-
-        // Jalankan aplikasi
+        // Boot
         initApp();
     </script>
 </body>
