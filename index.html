@@ -682,8 +682,14 @@
                 
                 setTimeout(() => window.location.reload(), 1500);
             } catch (error) {
+                // PERBAIKAN: Penanganan pesan error server yang lebih jelas
+                let errorMsg = error.message;
+                if (errorMsg === "Failed to fetch") {
+                    errorMsg = "Gagal terhubung ke Google. Pastikan Script Backend sudah di-Deploy 'Versi Baru' dan diizinkan.";
+                }
+                
                 addLogToHistory(pendingCheckpointId, "Gagal");
-                showToast(error.message || "Gagal mencatat laporan. Periksa GPS/Koneksi.", "error");
+                showToast(errorMsg, "error");
                 loadingOverlay.classList.add('hidden');
                 switchView('view-dashboard'); 
             }
