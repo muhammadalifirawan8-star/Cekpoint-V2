@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Barcode Cek Poin - Tol Makassar</title>
+    <title>Cetak Barcode Cek Point - Tol Makassar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -28,7 +28,7 @@
                 <h1 class="text-2xl font-bold flex items-center gap-3">
                     <i class="fa-solid fa-qrcode"></i> Generator Barcode Patroli
                 </h1>
-                <p class="text-blue-200 text-sm mt-1">Daftar Titik Cek Poin - Tol Makassar Raya</p>
+                <p class="text-blue-200 text-sm mt-1">Daftar Titik Cek Poin - Tol Makassar</p>
             </div>
             <button onclick="window.print()" class="bg-white text-blue-800 px-5 py-2.5 rounded-lg font-bold shadow-sm hover:bg-blue-50 transition active:scale-95 flex items-center gap-2">
                 <i class="fa-solid fa-print"></i> Cetak ke Kertas (A4)
@@ -53,18 +53,18 @@
     </main>
 
     <script>
-        // Daftar titik cek poin di Tol Makassar
+        // Daftar titik cek point di Tol Makassar
         const titikCekPoin = [
-            "TOL-MKS-STA-00-Pelabuhan",
-            "TOL-MKS-STA-02-Gerbang-Cambaya",
-            "TOL-MKS-STA-04-Gerbang-Buloa",
-            "TOL-MKS-STA-05-Simpang-Mandai",
-            "TOL-MKS-STA-06-Gerbang-Parangloe",
-            "TOL-MKS-STA-07-Bandara-Hasanuddin",
-            "TOL-MKS-STA-08-Tallo-Timur",
-            "TOL-MKS-STA-10-Pettarani-Utara",
-            "TOL-MKS-STA-12-Pettarani-Selatan",
-            "TOL-MKS-STA-Kantor-Pengelola"
+            "TOL-MKS-STA-0+100-A-Seksi-1",
+            "TOL-MKS-STA-0+800-B-Seksi-1",
+            "TOL-MKS-STA-1+000-A-Seksi-1",
+            "TOL-MKS-STA-2+100-B-Seksi-1",
+            "TOL-MKS-STA-2+500-B-Seksi-1",
+            "TOL-MKS-STA-3+200-B-Seksi-2",
+            "TOL-MKS-STA-4+000-B-Seksi-2",
+            "TOL-MKS-STA-4+400-A-Seksi-2",
+            "TOL-MKS-STA-4+600-B-Seksi-2",
+            "TOL-MKS-STA-5+000-B-Seksi-2"
         ];
 
         const container = document.getElementById('barcodeContainer');
